@@ -7,6 +7,7 @@ import com.crw.backend.entity.Workspace;
 import com.crw.backend.exception.ResourceNotFoundException;
 import com.crw.backend.repository.MeetingRepository;
 import com.crw.backend.repository.WorkspaceRepository;
+import com.crw.backend.security.WorkspaceAccessGuard;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,11 +21,12 @@ public class MeetingServiceImpl implements MeetingService {
 
     private final MeetingRepository meetingRepository;
     private final WorkspaceRepository workspaceRepository;
+    private final WorkspaceAccessGuard accessGuard;
 
     @Override
     public MeetingResponse createMeeting(MeetingCreateRequest request) {
-        Workspace workspace = workspaceRepository.findById(request.getWorkspaceId())
-                .orElseThrow(() -> new ResourceNotFoundException("Workspace not found with id: " + request.getWorkspaceId()));
+        Workspace workspace = findWorkspaceOrThrow(request.getWorkspaceId());
+        accessGuard.requireMember(workspace);
 
         Meeting meeting = Meeting.builder()
                 .title(request.getTitle())
@@ -40,15 +42,16 @@ public class MeetingServiceImpl implements MeetingService {
     @Override
     @Transactional(readOnly = true)
     public MeetingResponse getMeetingById(Long id) {
-        return toResponse(findMeetingOrThrow(id));
+        Meeting meeting = findMeetingOrThrow(id);
+        accessGuard.requireMember(meeting.getWorkspace());
+        return toResponse(meeting);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<MeetingResponse> getMeetingsByWorkspace(Long workspaceId) {
-        if (!workspaceRepository.existsById(workspaceId)) {
-            throw new ResourceNotFoundException("Workspace not found with id: " + workspaceId);
-        }
+        Workspace workspace = findWorkspaceOrThrow(workspaceId);
+        accessGuard.requireMember(workspace);
         return meetingRepository.findByWorkspaceId(workspaceId).stream()
                 .map(this::toResponse)
                 .toList();
@@ -56,15 +59,19 @@ public class MeetingServiceImpl implements MeetingService {
 
     @Override
     public void deleteMeeting(Long id) {
-        if (!meetingRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Meeting not found with id: " + id);
-        }
-        meetingRepository.deleteById(id);
+        Meeting meeting = findMeetingOrThrow(id);
+        accessGuard.requireMember(meeting.getWorkspace());
+        meetingRepository.delete(meeting);
     }
 
     private Meeting findMeetingOrThrow(Long id) {
         return meetingRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Meeting not found with id: " + id));
+    }
+
+    private Workspace findWorkspaceOrThrow(Long id) {
+        return workspaceRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Workspace not found with id: " + id));
     }
 
     private MeetingResponse toResponse(Meeting meeting) {

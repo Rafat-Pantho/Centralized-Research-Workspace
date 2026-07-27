@@ -30,10 +30,24 @@
   letter-spacing: 0.5px;
 }
 
+.navbar-workspace {
+  background: var(--accent-bg);
+  color: var(--accent);
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .navbar-links {
   display: flex;
   gap: 20px;
   flex: 1;
+  flex-wrap: wrap;
 }
 
 .navbar-links a {
@@ -41,6 +55,7 @@
   text-decoration: none;
   font-size: 14px;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .navbar-links a:hover {
@@ -68,6 +83,15 @@
 
 .btn-ghost {
   background: transparent;
+}
+
+.btn-danger {
+  color: #dc2626;
+  border-color: rgba(220, 38, 38, 0.3);
+}
+
+.btn-danger:hover {
+  background: rgba(220, 38, 38, 0.08);
 }
 
 /* Auth */
@@ -112,13 +136,25 @@
   color: var(--text-h);
 }
 
-.auth-card input {
+.auth-card input,
+.auth-card select {
   border: 1px solid var(--border);
   border-radius: 6px;
   padding: 10px 12px;
   font-size: 14px;
   background: var(--bg);
   color: var(--text-h);
+  font-family: inherit;
+}
+
+.auth-card a {
+  font-weight: 500;
+}
+
+.field-error {
+  color: #dc2626;
+  font-size: 12px;
+  font-weight: 400;
 }
 
 .alert {
@@ -352,8 +388,206 @@
   margin-bottom: 4px;
 }
 
-.manuscript-list h4 {
+.manuscript-list h4,
+.meeting-list h4 {
   font-size: 13px;
   color: var(--text);
   margin: 20px 0 12px;
+}
+
+/* Workspace manager & inline forms */
+.workspace-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.workspace-select {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-h);
+  max-width: 320px;
+}
+
+.workspace-select select {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 14px;
+  background: var(--bg);
+  color: var(--text-h);
+  font-family: inherit;
+}
+
+.inline-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.inline-form input {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  background: var(--bg);
+  color: var(--text-h);
+  font-family: inherit;
+  flex: 1 1 200px;
+}
+
+.inline-form .btn {
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.inline-form .alert {
+  flex-basis: 100%;
+}
+
+/* Entry forms (task / literature / manuscript creation) */
+.entry-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.entry-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 14px;
+}
+
+.entry-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-h);
+}
+
+.entry-form input,
+.entry-form select,
+.entry-form textarea {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  background: var(--bg);
+  color: var(--text-h);
+  font-family: inherit;
+  resize: vertical;
+}
+
+.entry-form .btn {
+  align-self: flex-start;
+  width: auto;
+  padding: 8px 20px;
+}
+
+.markdown-input {
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  font-size: 13px;
+}
+
+/* Task list */
+.task-row {
+  align-items: flex-start;
+}
+
+.task-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.badge-select {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+}
+
+/* Accordion */
+.accordion-toggle {
+  align-self: flex-start;
+  padding: 4px 10px;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.annotation-form {
+  margin-top: 12px;
+}
+
+/* Manuscript versions */
+.version-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.version-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.version-item .list-row {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.version-form {
+  margin-top: 12px;
+}
+
+.markdown-preview {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.markdown-preview :first-child {
+  margin-top: 0;
+}
+
+.markdown-preview :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3 {
+  font-size: 16px;
+  margin: 12px 0 6px;
+}
+
+.markdown-preview p {
+  margin: 8px 0;
+}
+
+.markdown-preview ul,
+.markdown-preview ol {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.markdown-preview code {
+  background: var(--code-bg, var(--border));
+  padding: 2px 5px;
+  border-radius: 4px;
+  font-size: 13px;
 }

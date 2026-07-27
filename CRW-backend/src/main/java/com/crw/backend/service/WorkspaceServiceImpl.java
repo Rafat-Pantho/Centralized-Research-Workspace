@@ -7,6 +7,7 @@ import com.crw.backend.entity.Workspace;
 import com.crw.backend.exception.ResourceNotFoundException;
 import com.crw.backend.repository.UserRepository;
 import com.crw.backend.repository.WorkspaceRepository;
+import com.crw.backend.security.WorkspaceAccessGuard;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,14 +22,18 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
     private final WorkspaceRepository workspaceRepository;
     private final UserRepository userRepository;
+    private final WorkspaceAccessGuard accessGuard;
 
     @Override
     public WorkspaceResponse createWorkspace(WorkspaceCreateRequest request) {
+        User creator = accessGuard.currentUser();
+
         Workspace workspace = Workspace.builder()
                 .name(request.getName())
                 .description(request.getDescription())
                 .createdAt(LocalDateTime.now())
                 .build();
+        workspace.getMembers().add(creator);
 
         return toResponse(workspaceRepository.save(workspace));
     }
@@ -36,13 +41,18 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     @Override
     @Transactional(readOnly = true)
     public WorkspaceResponse getWorkspaceById(Long id) {
-        return toResponse(findWorkspaceOrThrow(id));
+        Workspace workspace = findWorkspaceOrThrow(id);
+        accessGuard.requireMember(workspace);
+        return toResponse(workspace);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<WorkspaceResponse> getAllWorkspaces() {
+        User currentUser = accessGuard.currentUser();
         return workspaceRepository.findAll().stream()
+                .filter(workspace -> workspace.getMembers().stream()
+                        .anyMatch(member -> member.getId().equals(currentUser.getId())))
                 .map(this::toResponse)
                 .toList();
     }
@@ -50,6 +60,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     @Override
     public WorkspaceResponse addMemberToWorkspace(Long workspaceId, Long userId) {
         Workspace workspace = findWorkspaceOrThrow(workspaceId);
+        accessGuard.requireMember(workspace);
         User user = findUserOrThrow(userId);
         workspace.getMembers().add(user);
         return toResponse(workspace);
@@ -58,6 +69,7 @@ public class WorkspaceServiceImpl implements WorkspaceService {
     @Override
     public WorkspaceResponse removeMemberFromWorkspace(Long workspaceId, Long userId) {
         Workspace workspace = findWorkspaceOrThrow(workspaceId);
+        accessGuard.requireMember(workspace);
         User user = findUserOrThrow(userId);
         workspace.getMembers().remove(user);
         return toResponse(workspace);
@@ -65,10 +77,9 @@ public class WorkspaceServiceImpl implements WorkspaceService {
 
     @Override
     public void deleteWorkspace(Long id) {
-        if (!workspaceRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Workspace not found with id: " + id);
-        }
-        workspaceRepository.deleteById(id);
+        Workspace workspace = findWorkspaceOrThrow(id);
+        accessGuard.requireMember(workspace);
+        workspaceRepository.delete(workspace);
     }
 
     private Workspace findWorkspaceOrThrow(Long id) {

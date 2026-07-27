@@ -11,8 +11,8 @@ import com.crw.backend.entity.User;
 import com.crw.backend.entity.Workspace;
 import com.crw.backend.exception.ResourceNotFoundException;
 import com.crw.backend.repository.ManuscriptRepository;
-import com.crw.backend.repository.UserRepository;
 import com.crw.backend.repository.WorkspaceRepository;
+import com.crw.backend.security.WorkspaceAccessGuard;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,11 +27,12 @@ public class ManuscriptServiceImpl implements ManuscriptService {
 
     private final ManuscriptRepository manuscriptRepository;
     private final WorkspaceRepository workspaceRepository;
-    private final UserRepository userRepository;
+    private final WorkspaceAccessGuard accessGuard;
 
     @Override
     public ManuscriptResponse createManuscript(ManuscriptCreateRequest request) {
         Workspace workspace = findWorkspaceOrThrow(request.getWorkspaceId());
+        accessGuard.requireMember(workspace);
 
         Manuscript manuscript = Manuscript.builder()
                 .title(request.getTitle())
@@ -46,15 +47,16 @@ public class ManuscriptServiceImpl implements ManuscriptService {
     @Override
     @Transactional(readOnly = true)
     public ManuscriptResponse getManuscriptById(Long id) {
-        return toResponse(findManuscriptOrThrow(id));
+        Manuscript manuscript = findManuscriptOrThrow(id);
+        accessGuard.requireMember(manuscript.getWorkspace());
+        return toResponse(manuscript);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<ManuscriptResponse> getManuscriptsByWorkspace(Long workspaceId) {
-        if (!workspaceRepository.existsById(workspaceId)) {
-            throw new ResourceNotFoundException("Workspace not found with id: " + workspaceId);
-        }
+        Workspace workspace = findWorkspaceOrThrow(workspaceId);
+        accessGuard.requireMember(workspace);
         return manuscriptRepository.findByWorkspaceId(workspaceId).stream()
                 .map(this::toResponse)
                 .toList();
@@ -63,32 +65,36 @@ public class ManuscriptServiceImpl implements ManuscriptService {
     @Override
     public ManuscriptResponse updateManuscript(Long id, ManuscriptCreateRequest request) {
         Manuscript manuscript = findManuscriptOrThrow(id);
+        accessGuard.requireMember(manuscript.getWorkspace());
+
+        Workspace targetWorkspace = findWorkspaceOrThrow(request.getWorkspaceId());
+        accessGuard.requireMember(targetWorkspace);
+
         manuscript.setTitle(request.getTitle());
         manuscript.setTargetJournal(request.getTargetJournal());
-        manuscript.setWorkspace(findWorkspaceOrThrow(request.getWorkspaceId()));
+        manuscript.setWorkspace(targetWorkspace);
         return toResponse(manuscript);
     }
 
     @Override
     public ManuscriptResponse updateManuscriptStatus(Long id, ManuscriptStatus status) {
         Manuscript manuscript = findManuscriptOrThrow(id);
+        accessGuard.requireMember(manuscript.getWorkspace());
         manuscript.setStatus(status);
         return toResponse(manuscript);
     }
 
     @Override
     public void deleteManuscript(Long id) {
-        if (!manuscriptRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Manuscript not found with id: " + id);
-        }
-        manuscriptRepository.deleteById(id);
+        Manuscript manuscript = findManuscriptOrThrow(id);
+        accessGuard.requireMember(manuscript.getWorkspace());
+        manuscriptRepository.delete(manuscript);
     }
 
     @Override
     public ManuscriptResponse addVersion(Long manuscriptId, ManuscriptVersionRequest request) {
         Manuscript manuscript = findManuscriptOrThrow(manuscriptId);
-        User author = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + request.getUserId()));
+        User author = accessGuard.requireMember(manuscript.getWorkspace());
 
         ManuscriptVersion version = ManuscriptVersion.builder()
                 .content(request.getContent())

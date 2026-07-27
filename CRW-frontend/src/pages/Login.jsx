@@ -1,18 +1,21 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { login } from "../services/authService";
+import { useWorkspace } from "../context/WorkspaceContext";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { refreshWorkspaces } = useWorkspace();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
     try {
       await login(email, password);
+      await refreshWorkspaces();
       navigate("/");
     } catch {
       setError("Invalid email or password.");
@@ -52,6 +55,10 @@ function Login() {
         <button type="submit" className="btn btn-primary">
           Sign In
         </button>
+
+        <p className="auth-subtitle">
+          Don't have an account? <Link to="/register">Register</Link>
+        </p>
       </form>
     </div>
   );

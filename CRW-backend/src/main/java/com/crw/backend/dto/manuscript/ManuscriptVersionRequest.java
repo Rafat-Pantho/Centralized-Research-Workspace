@@ -1,7 +1,6 @@
 package com.crw.backend.dto.manuscript;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,7 +15,4 @@ public class ManuscriptVersionRequest {
     private String versionTag;
 
     private String commitMessage;
-
-    @NotNull
-    private Long userId;
 }

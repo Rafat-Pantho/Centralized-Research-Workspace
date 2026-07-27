@@ -10,8 +10,8 @@ import com.crw.backend.entity.User;
 import com.crw.backend.entity.Workspace;
 import com.crw.backend.exception.ResourceNotFoundException;
 import com.crw.backend.repository.LiteratureRepository;
-import com.crw.backend.repository.UserRepository;
 import com.crw.backend.repository.WorkspaceRepository;
+import com.crw.backend.security.WorkspaceAccessGuard;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,11 +26,12 @@ public class LiteratureServiceImpl implements LiteratureService {
 
     private final LiteratureRepository literatureRepository;
     private final WorkspaceRepository workspaceRepository;
-    private final UserRepository userRepository;
+    private final WorkspaceAccessGuard accessGuard;
 
     @Override
     public LiteratureResponse createLiterature(LiteratureCreateRequest request) {
         Workspace workspace = findWorkspaceOrThrow(request.getWorkspaceId());
+        accessGuard.requireMember(workspace);
 
         Literature literature = Literature.builder()
                 .title(request.getTitle())
@@ -48,15 +49,16 @@ public class LiteratureServiceImpl implements LiteratureService {
     @Override
     @Transactional(readOnly = true)
     public LiteratureResponse getLiteratureById(Long id) {
-        return toResponse(findLiteratureOrThrow(id));
+        Literature literature = findLiteratureOrThrow(id);
+        accessGuard.requireMember(literature.getWorkspace());
+        return toResponse(literature);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<LiteratureResponse> getLiteratureByWorkspace(Long workspaceId) {
-        if (!workspaceRepository.existsById(workspaceId)) {
-            throw new ResourceNotFoundException("Workspace not found with id: " + workspaceId);
-        }
+        Workspace workspace = findWorkspaceOrThrow(workspaceId);
+        accessGuard.requireMember(workspace);
         return literatureRepository.findByWorkspaceId(workspaceId).stream()
                 .map(this::toResponse)
                 .toList();
@@ -65,29 +67,32 @@ public class LiteratureServiceImpl implements LiteratureService {
     @Override
     public LiteratureResponse updateLiterature(Long id, LiteratureCreateRequest request) {
         Literature literature = findLiteratureOrThrow(id);
+        accessGuard.requireMember(literature.getWorkspace());
+
+        Workspace targetWorkspace = findWorkspaceOrThrow(request.getWorkspaceId());
+        accessGuard.requireMember(targetWorkspace);
+
         literature.setTitle(request.getTitle());
         literature.setAuthors(request.getAuthors());
         literature.setPublicationYear(request.getPublicationYear());
         literature.setDoi(request.getDoi());
         literature.setUrl(request.getUrl());
         literature.setSummary(request.getSummary());
-        literature.setWorkspace(findWorkspaceOrThrow(request.getWorkspaceId()));
+        literature.setWorkspace(targetWorkspace);
         return toResponse(literature);
     }
 
     @Override
     public void deleteLiterature(Long id) {
-        if (!literatureRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Literature not found with id: " + id);
-        }
-        literatureRepository.deleteById(id);
+        Literature literature = findLiteratureOrThrow(id);
+        accessGuard.requireMember(literature.getWorkspace());
+        literatureRepository.delete(literature);
     }
 
     @Override
     public LiteratureResponse addAnnotation(Long literatureId, AnnotationCreateRequest request) {
         Literature literature = findLiteratureOrThrow(literatureId);
-        User author = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + request.getUserId()));
+        User author = accessGuard.requireMember(literature.getWorkspace());
 
         Annotation annotation = Annotation.builder()
                 .content(request.getContent())
