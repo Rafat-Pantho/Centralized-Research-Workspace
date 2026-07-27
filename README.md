@@ -36,8 +36,6 @@ CRW consolidates these workflows into a single collaborative workspace, allowing
 
 ## Features Showcase
 
-<!-- TODO: Add actual screenshots to the screenshots/ directory -->
-
 | Dashboard | Literature Management | Manuscript Development |
 |-----------|------------------------|--------------------------|
 | ![Dashboard](screenshots/dashboard.png) | ![Literature](screenshots/literature.png) | ![Manuscript](screenshots/manuscript.png) |
