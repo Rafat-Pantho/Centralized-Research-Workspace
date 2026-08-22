@@ -8,6 +8,7 @@ import Manuscript from "./pages/Manuscript";
 import Meetings from "./pages/Meetings";
 import WorkspaceSettings from "./pages/WorkspaceSettings";
 import Profile from "./pages/Profile";
+import Chat from "./pages/Chat";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { WorkspaceProvider } from "./context/WorkspaceContext";
 import "./App.css";
@@ -32,6 +33,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Tasks />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/chat"
+            element={
+              <ProtectedRoute>
+                <Chat />
               </ProtectedRoute>
             }
           />

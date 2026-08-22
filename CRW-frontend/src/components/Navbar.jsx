@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { logout } from "../services/authService";
 import { useWorkspace } from "../context/WorkspaceContext";
 import GlobalSearchModal from "./GlobalSearchModal";
@@ -29,20 +29,39 @@ function Navbar() {
   return (
     <>
       <header className="navbar">
-        <div className="navbar-brand">CRW</div>
+        <NavLink to="/" className="navbar-brand">
+          CRW
+        </NavLink>
         {activeWorkspace && (
           <div className="navbar-workspace" title={activeWorkspace.name}>
             {activeWorkspace.name}
           </div>
         )}
         <nav className="navbar-links">
-          <Link to="/">Dashboard</Link>
-          <Link to="/tasks">Tasks</Link>
-          <Link to="/literature">Literature</Link>
-          <Link to="/manuscripts">Manuscripts</Link>
-          <Link to="/meetings">Meetings</Link>
-          <Link to="/settings">Settings</Link>
-          <Link to="/profile">Profile</Link>
+          <NavLink to="/" end className={({ isActive }) => (isActive ? "active" : "")}>
+            Dashboard
+          </NavLink>
+          <NavLink to="/tasks" className={({ isActive }) => (isActive ? "active" : "")}>
+            Tasks
+          </NavLink>
+          <NavLink to="/chat" className={({ isActive }) => (isActive ? "active" : "")}>
+            Chat
+          </NavLink>
+          <NavLink to="/literature" className={({ isActive }) => (isActive ? "active" : "")}>
+            Literature
+          </NavLink>
+          <NavLink to="/manuscripts" className={({ isActive }) => (isActive ? "active" : "")}>
+            Manuscripts
+          </NavLink>
+          <NavLink to="/meetings" className={({ isActive }) => (isActive ? "active" : "")}>
+            Meetings
+          </NavLink>
+          <NavLink to="/settings" className={({ isActive }) => (isActive ? "active" : "")}>
+            Settings
+          </NavLink>
+          <NavLink to="/profile" className={({ isActive }) => (isActive ? "active" : "")}>
+            Profile
+          </NavLink>
         </nav>
         <button
           type="button"

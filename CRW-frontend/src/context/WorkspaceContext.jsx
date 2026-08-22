@@ -18,19 +18,24 @@ export function WorkspaceProvider({ children }) {
       return;
     }
     setLoading(true);
-    const { data } = await api.get("/workspaces");
-    setWorkspaces(data);
-    setActiveWorkspaceId((current) => {
-      const stillValid = data.some((ws) => String(ws.id) === String(current));
-      const next = stillValid ? current : data[0]?.id ?? null;
-      if (next) {
-        localStorage.setItem("activeWorkspaceId", next);
-      } else {
-        localStorage.removeItem("activeWorkspaceId");
-      }
-      return next;
-    });
-    setLoading(false);
+    try {
+      const { data } = await api.get("/workspaces");
+      setWorkspaces(data);
+      setActiveWorkspaceId((current) => {
+        const stillValid = data.some((ws) => String(ws.id) === String(current));
+        const next = stillValid ? current : data[0]?.id ?? null;
+        if (next) {
+          localStorage.setItem("activeWorkspaceId", next);
+        } else {
+          localStorage.removeItem("activeWorkspaceId");
+        }
+        return next;
+      });
+    } catch (err) {
+      console.error("Failed to fetch workspaces:", err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
