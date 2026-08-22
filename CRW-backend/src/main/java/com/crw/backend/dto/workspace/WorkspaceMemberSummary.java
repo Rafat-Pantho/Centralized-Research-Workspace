@@ -6,18 +6,12 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-import java.util.List;
-
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class WorkspaceResponse {
+public class WorkspaceMemberSummary {
     private Long id;
-    private String name;
-    private String description;
-    private LocalDateTime createdAt;
-    private List<WorkspaceMemberSummary> members;
+    private String username;
 }

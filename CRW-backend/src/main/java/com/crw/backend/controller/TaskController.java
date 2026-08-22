@@ -1,5 +1,6 @@
 package com.crw.backend.controller;
 
+import com.crw.backend.dto.task.TaskAssignRequest;
 import com.crw.backend.dto.task.TaskCreateRequest;
 import com.crw.backend.dto.task.TaskResponse;
 import com.crw.backend.dto.task.TaskStatusUpdateRequest;
@@ -44,6 +45,11 @@ public class TaskController {
     @PatchMapping("/{id}/status")
     public ResponseEntity<TaskResponse> updateTaskStatus(@PathVariable Long id, @Valid @RequestBody TaskStatusUpdateRequest request) {
         return ResponseEntity.ok(taskService.updateTaskStatus(id, request.getStatus()));
+    }
+
+    @PatchMapping("/{id}/assignee")
+    public ResponseEntity<TaskResponse> assignTask(@PathVariable Long id, @Valid @RequestBody TaskAssignRequest request) {
+        return ResponseEntity.ok(taskService.assignTask(id, request.getAssigneeId()));
     }
 
     @DeleteMapping("/{id}")

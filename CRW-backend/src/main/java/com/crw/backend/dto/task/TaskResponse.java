@@ -22,4 +22,6 @@ public class TaskResponse {
     private LocalDateTime dueDate;
     private Long workspaceId;
     private String workspaceName;
+    private Long assigneeId;
+    private String assigneeUsername;
 }

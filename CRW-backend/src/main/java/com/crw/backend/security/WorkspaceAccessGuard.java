@@ -22,11 +22,17 @@ public class WorkspaceAccessGuard {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
     }
 
+    public boolean isMember(Workspace workspace, User user) {
+        if (workspace == null || user == null) {
+            return false;
+        }
+        return workspace.getMembers().stream()
+                .anyMatch(m -> m.getId().equals(user.getId()));
+    }
+
     public User requireMember(Workspace workspace) {
         User user = currentUser();
-        boolean member = workspace.getMembers().stream()
-                .anyMatch(m -> m.getId().equals(user.getId()));
-        if (!member) {
+        if (!isMember(workspace, user)) {
             throw new AccessDeniedException("Access Denied: You are not a member of this workspace.");
         }
         return user;

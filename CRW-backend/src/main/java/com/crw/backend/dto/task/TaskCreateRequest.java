@@ -23,4 +23,6 @@ public class TaskCreateRequest {
 
     @NotNull
     private Long workspaceId;
+
+    private Long assigneeId;
 }

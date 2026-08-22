@@ -4,9 +4,11 @@ import com.crw.backend.dto.task.TaskCreateRequest;
 import com.crw.backend.dto.task.TaskResponse;
 import com.crw.backend.entity.Task;
 import com.crw.backend.entity.TaskStatus;
+import com.crw.backend.entity.User;
 import com.crw.backend.entity.Workspace;
 import com.crw.backend.exception.ResourceNotFoundException;
 import com.crw.backend.repository.TaskRepository;
+import com.crw.backend.repository.UserRepository;
 import com.crw.backend.repository.WorkspaceRepository;
 import com.crw.backend.security.WorkspaceAccessGuard;
 import lombok.RequiredArgsConstructor;
@@ -22,12 +24,14 @@ public class TaskServiceImpl implements TaskService {
 
     private final TaskRepository taskRepository;
     private final WorkspaceRepository workspaceRepository;
+    private final UserRepository userRepository;
     private final WorkspaceAccessGuard accessGuard;
 
     @Override
     public TaskResponse createTask(TaskCreateRequest request) {
         Workspace workspace = findWorkspaceOrThrow(request.getWorkspaceId());
         accessGuard.requireMember(workspace);
+        User assignee = resolveAndValidateAssignee(workspace, request.getAssigneeId());
 
         Task task = Task.builder()
                 .title(request.getTitle())
@@ -35,6 +39,7 @@ public class TaskServiceImpl implements TaskService {
                 .status(request.getStatus())
                 .dueDate(request.getDueDate())
                 .workspace(workspace)
+                .assignee(assignee)
                 .build();
 
         return toResponse(taskRepository.save(task));
@@ -67,10 +72,31 @@ public class TaskServiceImpl implements TaskService {
     }
 
     @Override
+    public TaskResponse assignTask(Long id, Long assigneeId) {
+        Task task = findTaskOrThrow(id);
+        accessGuard.requireMember(task.getWorkspace());
+        User assignee = resolveAndValidateAssignee(task.getWorkspace(), assigneeId);
+        task.setAssignee(assignee);
+        return toResponse(task);
+    }
+
+    @Override
     public void deleteTask(Long id) {
         Task task = findTaskOrThrow(id);
         accessGuard.requireMember(task.getWorkspace());
         taskRepository.delete(task);
+    }
+
+    private User resolveAndValidateAssignee(Workspace workspace, Long assigneeId) {
+        if (assigneeId == null) {
+            return null;
+        }
+        User user = userRepository.findById(assigneeId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + assigneeId));
+        if (!accessGuard.isMember(workspace, user)) {
+            throw new IllegalArgumentException("Assigned user is not a member of this workspace.");
+        }
+        return user;
     }
 
     private Task findTaskOrThrow(Long id) {
@@ -92,6 +118,8 @@ public class TaskServiceImpl implements TaskService {
                 .dueDate(task.getDueDate())
                 .workspaceId(task.getWorkspace().getId())
                 .workspaceName(task.getWorkspace().getName())
+                .assigneeId(task.getAssignee() != null ? task.getAssignee().getId() : null)
+                .assigneeUsername(task.getAssignee() != null ? task.getAssignee().getUsername() : null)
                 .build();
     }
 }

@@ -1,6 +1,7 @@
 package com.crw.backend.service;
 
 import com.crw.backend.dto.workspace.WorkspaceCreateRequest;
+import com.crw.backend.dto.workspace.WorkspaceMemberSummary;
 import com.crw.backend.dto.workspace.WorkspaceResponse;
 import com.crw.backend.entity.User;
 import com.crw.backend.entity.Workspace;
@@ -98,8 +99,8 @@ public class WorkspaceServiceImpl implements WorkspaceService {
                 .name(workspace.getName())
                 .description(workspace.getDescription())
                 .createdAt(workspace.getCreatedAt())
-                .memberUsernames(workspace.getMembers().stream()
-                        .map(User::getUsername)
+                .members(workspace.getMembers().stream()
+                        .map(u -> new WorkspaceMemberSummary(u.getId(), u.getUsername()))
                         .toList())
                 .build();
     }
