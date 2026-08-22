@@ -58,6 +58,8 @@ mvn spring-boot:run
 
 The backend will start on `http://localhost:8080`.
 
+> **Note:** Data persists in `CRW-backend/data/` between restarts; delete that folder to reset to a clean database.
+
 ### Frontend Setup (React + Vite)
 
 ```bash

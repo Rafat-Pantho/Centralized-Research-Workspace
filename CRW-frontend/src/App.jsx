@@ -7,6 +7,7 @@ import Literature from "./pages/Literature";
 import Manuscript from "./pages/Manuscript";
 import Meetings from "./pages/Meetings";
 import WorkspaceSettings from "./pages/WorkspaceSettings";
+import Profile from "./pages/Profile";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { WorkspaceProvider } from "./context/WorkspaceContext";
 import "./App.css";
@@ -63,6 +64,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <WorkspaceSettings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             }
           />

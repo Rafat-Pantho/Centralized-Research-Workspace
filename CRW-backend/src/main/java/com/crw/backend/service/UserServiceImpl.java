@@ -7,6 +7,7 @@ import com.crw.backend.entity.User;
 import com.crw.backend.exception.DuplicateResourceException;
 import com.crw.backend.exception.ResourceNotFoundException;
 import com.crw.backend.repository.UserRepository;
+import com.crw.backend.security.WorkspaceAccessGuard;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -21,6 +22,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final WorkspaceAccessGuard accessGuard;
 
     @Override
     public UserResponse createUser(UserCreateRequest request) {
@@ -45,6 +47,12 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public UserResponse getUserById(Long id) {
         return toResponse(findUserOrThrow(id));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserResponse getCurrentUser() {
+        return toResponse(accessGuard.currentUser());
     }
 
     @Override

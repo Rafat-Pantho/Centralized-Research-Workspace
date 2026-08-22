@@ -22,7 +22,9 @@ Thumbs.db
 # Logs & Databases
 *.log
 *.h2.db
+*.mv.db
 *.trace.db
+data/
 
 # Screenshots: keep the directory, ignore large video files inside it
 screenshots/*.mp4

@@ -100,6 +100,7 @@ function Tasks() {
   const { activeWorkspace, activeWorkspaceId, loading: workspaceLoading } = useWorkspace();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState("kanban"); // "kanban" | "list"
 
   const loadTasks = async () => {
     if (!activeWorkspaceId) {
@@ -140,6 +141,25 @@ function Tasks() {
     setTasks((prev) => prev.filter((task) => task.id !== taskId));
   };
 
+  const handleDragStart = (event, taskId) => {
+    event.dataTransfer.setData("text/plain", String(taskId));
+  };
+
+  const handleDragOver = (event) => {
+    event.preventDefault();
+  };
+
+  const handleDrop = async (event, targetStatus) => {
+    event.preventDefault();
+    const taskIdStr = event.dataTransfer.getData("text/plain");
+    if (!taskIdStr) return;
+    const taskId = Number(taskIdStr);
+    const task = tasks.find((t) => t.id === taskId);
+    if (task && task.status !== targetStatus) {
+      await handleStatusChange(taskId, targetStatus);
+    }
+  };
+
   if (workspaceLoading || loading) {
     return <div className="page-loading">Loading tasks...</div>;
   }
@@ -148,8 +168,30 @@ function Tasks() {
     <>
       <Navbar />
       <main className="page">
-        <h1>Task Tracking</h1>
-        <p className="muted">Plan, assign, and track progress on workspace tasks.</p>
+        <div className="tasks-header-row">
+          <div>
+            <h1>Task Tracking</h1>
+            <p className="muted">Plan, assign, and track progress on workspace tasks.</p>
+          </div>
+          {activeWorkspaceId && (
+            <div className="view-toggle-buttons">
+              <button
+                type="button"
+                className={`btn ${viewMode === "kanban" ? "btn-primary" : "btn-ghost"}`}
+                onClick={() => setViewMode("kanban")}
+              >
+                Kanban Board
+              </button>
+              <button
+                type="button"
+                className={`btn ${viewMode === "list" ? "btn-primary" : "btn-ghost"}`}
+                onClick={() => setViewMode("list")}
+              >
+                List View
+              </button>
+            </div>
+          )}
+        </div>
 
         {!activeWorkspaceId ? (
           <p className="muted small">Select a workspace on the Dashboard to see its tasks.</p>
@@ -160,65 +202,140 @@ function Tasks() {
               <TaskForm onCreate={handleCreate} members={activeWorkspace?.members || []} />
             </section>
 
-            <section className="panel">
-              <h2>Tasks</h2>
-              {tasks.length === 0 ? (
-                <p className="muted small">No tasks yet.</p>
-              ) : (
-                <ul className="list">
-                  {tasks.map((task) => (
-                    <li key={task.id} className="list-row task-row">
-                      <div>
-                        <div className="list-title">{task.title}</div>
-                        {task.description && (
-                          <div className="muted small">{task.description}</div>
-                        )}
-                        {task.assigneeUsername && (
-                          <div className="muted small">Assigned to {task.assigneeUsername}</div>
-                        )}
-                        {task.dueDate && (
-                          <div className="muted small">
-                            Due {new Date(task.dueDate).toLocaleString()}
-                          </div>
-                        )}
+            {viewMode === "kanban" ? (
+              <section className="kanban-section">
+                <h2>Kanban Board</h2>
+                <div className="kanban-board">
+                  {STATUSES.map((status) => {
+                    const columnTasks = tasks.filter((t) => t.status === status);
+                    return (
+                      <div
+                        key={status}
+                        className="kanban-column"
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, status)}
+                      >
+                        <div className="kanban-column-header">
+                          <span className={`badge badge-${status.toLowerCase()}`}>
+                            {status.replace("_", " ")}
+                          </span>
+                          <span className="kanban-count">{columnTasks.length}</span>
+                        </div>
+                        <div className="kanban-cards-list">
+                          {columnTasks.length === 0 ? (
+                            <p className="muted small kanban-empty-msg">No tasks</p>
+                          ) : (
+                            columnTasks.map((task) => (
+                              <div
+                                key={task.id}
+                                className="kanban-card"
+                                draggable
+                                onDragStart={(e) => handleDragStart(e, task.id)}
+                              >
+                                <div className="kanban-card-title">{task.title}</div>
+                                {task.description && (
+                                  <p className="muted small kanban-card-desc">{task.description}</p>
+                                )}
+                                {task.assigneeUsername && (
+                                  <div className="muted small kanban-card-assignee">
+                                    👤 {task.assigneeUsername}
+                                  </div>
+                                )}
+                                {task.dueDate && (
+                                  <div className="muted small kanban-card-due">
+                                    📅 {new Date(task.dueDate).toLocaleDateString()}
+                                  </div>
+                                )}
+                                <div className="kanban-card-actions">
+                                  <select
+                                    value={task.status}
+                                    onChange={(event) => handleStatusChange(task.id, event.target.value)}
+                                    className={`badge-select badge-${task.status.toLowerCase()}`}
+                                  >
+                                    {STATUSES.map((s) => (
+                                      <option key={s} value={s}>
+                                        {s.replace("_", " ")}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    type="button"
+                                    className="btn btn-ghost btn-danger small"
+                                    onClick={() => handleDelete(task.id)}
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
                       </div>
-                      <div className="task-actions">
-                        <select
-                          value={task.assigneeId || ""}
-                          onChange={(event) => handleAssigneeChange(task.id, event.target.value)}
-                          className="badge-select"
-                        >
-                          <option value="">Unassigned</option>
-                          {(activeWorkspace?.members || []).map((m) => (
-                            <option key={m.id} value={m.id}>
-                              {m.username}
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          value={task.status}
-                          onChange={(event) => handleStatusChange(task.id, event.target.value)}
-                          className={`badge-select badge-${task.status.toLowerCase()}`}
-                        >
-                          {STATUSES.map((s) => (
-                            <option key={s} value={s}>
-                              {s.replace("_", " ")}
-                            </option>
-                          ))}
-                        </select>
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-danger"
-                          onClick={() => handleDelete(task.id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
+                    );
+                  })}
+                </div>
+              </section>
+            ) : (
+              <section className="panel">
+                <h2>Tasks</h2>
+                {tasks.length === 0 ? (
+                  <p className="muted small">No tasks yet.</p>
+                ) : (
+                  <ul className="list">
+                    {tasks.map((task) => (
+                      <li key={task.id} className="list-row task-row">
+                        <div>
+                          <div className="list-title">{task.title}</div>
+                          {task.description && (
+                            <div className="muted small">{task.description}</div>
+                          )}
+                          {task.assigneeUsername && (
+                            <div className="muted small">Assigned to {task.assigneeUsername}</div>
+                          )}
+                          {task.dueDate && (
+                            <div className="muted small">
+                              Due {new Date(task.dueDate).toLocaleString()}
+                            </div>
+                          )}
+                        </div>
+                        <div className="task-actions">
+                          <select
+                            value={task.assigneeId || ""}
+                            onChange={(event) => handleAssigneeChange(task.id, event.target.value)}
+                            className="badge-select"
+                          >
+                            <option value="">Unassigned</option>
+                            {(activeWorkspace?.members || []).map((m) => (
+                              <option key={m.id} value={m.id}>
+                                {m.username}
+                              </option>
+                            ))}
+                          </select>
+                          <select
+                            value={task.status}
+                            onChange={(event) => handleStatusChange(task.id, event.target.value)}
+                            className={`badge-select badge-${task.status.toLowerCase()}`}
+                          >
+                            {STATUSES.map((s) => (
+                              <option key={s} value={s}>
+                                {s.replace("_", " ")}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-danger"
+                            onClick={() => handleDelete(task.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            )}
           </>
         )}
       </main>
