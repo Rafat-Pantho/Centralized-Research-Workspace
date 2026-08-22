@@ -141,16 +141,29 @@ function Tasks() {
     setTasks((prev) => prev.filter((task) => task.id !== taskId));
   };
 
+  const [draggedOverColumn, setDraggedOverColumn] = useState(null);
+
   const handleDragStart = (event, taskId) => {
     event.dataTransfer.setData("text/plain", String(taskId));
   };
 
-  const handleDragOver = (event) => {
+  const handleDragOver = (event, status) => {
     event.preventDefault();
+    if (draggedOverColumn !== status) {
+      setDraggedOverColumn(status);
+    }
+  };
+
+  const handleDragLeave = (event, status) => {
+    event.preventDefault();
+    if (draggedOverColumn === status) {
+      setDraggedOverColumn(null);
+    }
   };
 
   const handleDrop = async (event, targetStatus) => {
     event.preventDefault();
+    setDraggedOverColumn(null);
     const taskIdStr = event.dataTransfer.getData("text/plain");
     if (!taskIdStr) return;
     const taskId = Number(taskIdStr);
@@ -211,8 +224,9 @@ function Tasks() {
                     return (
                       <div
                         key={status}
-                        className="kanban-column"
-                        onDragOver={handleDragOver}
+                        className={`kanban-column ${draggedOverColumn === status ? "drag-over" : ""}`}
+                        onDragOver={(e) => handleDragOver(e, status)}
+                        onDragLeave={(e) => handleDragLeave(e, status)}
                         onDrop={(e) => handleDrop(e, status)}
                       >
                         <div className="kanban-column-header">

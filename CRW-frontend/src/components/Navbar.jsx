@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { logout } from "../services/authService";
 import { useWorkspace } from "../context/WorkspaceContext";
@@ -8,6 +8,17 @@ function Navbar() {
   const navigate = useNavigate();
   const { activeWorkspace, refreshWorkspaces } = useWorkspace();
   const [searchOpen, setSearchOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -37,9 +48,9 @@ function Navbar() {
           type="button"
           className="btn btn-ghost search-trigger-btn"
           onClick={() => setSearchOpen(true)}
-          title="Global Search"
+          title="Global Search (Cmd/Ctrl+K)"
         >
-          🔍 Search
+          🔍 Search <kbd className="shortcut-kbd">⌘K</kbd>
         </button>
         <button type="button" className="btn btn-ghost" onClick={handleLogout}>
           Log out

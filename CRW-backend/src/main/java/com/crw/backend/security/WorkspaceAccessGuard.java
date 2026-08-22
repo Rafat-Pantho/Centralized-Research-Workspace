@@ -17,9 +17,10 @@ public class WorkspaceAccessGuard {
 
     @Transactional(readOnly = true)
     public User currentUser() {
-        String email = SecurityUtils.getCurrentUsername();
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        String identifier = SecurityUtils.getCurrentUsername();
+        return userRepository.findByEmail(identifier)
+                .or(() -> userRepository.findByUsername(identifier))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + identifier));
     }
 
     public boolean isMember(Workspace workspace, User user) {
