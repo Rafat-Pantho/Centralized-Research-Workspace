@@ -60,6 +60,20 @@ function Dashboard() {
     return acc;
   }, {});
 
+  const now = new Date();
+  const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+
+  const overdueTasks = tasks.filter((t) => {
+    if (!t.dueDate || t.status === "COMPLETED") return false;
+    return new Date(t.dueDate) < now;
+  });
+
+  const dueSoonTasks = tasks.filter((t) => {
+    if (!t.dueDate || t.status === "COMPLETED") return false;
+    const due = new Date(t.dueDate);
+    return due >= now && due <= threeDaysFromNow;
+  });
+
   return (
     <>
       <Navbar />
@@ -72,9 +86,9 @@ function Dashboard() {
             <p className="muted">{activeWorkspace.description}</p>
           </div>
           <div className="member-chips">
-            {activeWorkspace.memberUsernames.map((username) => (
-              <span key={username} className="chip">
-                {username}
+            {activeWorkspace.members?.map((member) => (
+              <span key={member.id} className="chip">
+                {member.username}
               </span>
             ))}
           </div>
@@ -101,6 +115,38 @@ function Dashboard() {
                 <span className="stat-value">{manuscriptCount}</span>
                 <span className="stat-label">Manuscripts</span>
               </div>
+            </section>
+
+            <section className="panel">
+              <h2>Upcoming & Overdue</h2>
+              {overdueTasks.length === 0 && dueSoonTasks.length === 0 ? (
+                <p className="muted small">Nothing due in the next 3 days.</p>
+              ) : (
+                <ul className="list">
+                  {overdueTasks.map((task) => (
+                    <li key={task.id} className="list-row">
+                      <div>
+                        <div className="list-title">{task.title}</div>
+                        <div className="muted small">
+                          Due {new Date(task.dueDate).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <span className="badge badge-overdue">Overdue</span>
+                    </li>
+                  ))}
+                  {dueSoonTasks.map((task) => (
+                    <li key={task.id} className="list-row">
+                      <div>
+                        <div className="list-title">{task.title}</div>
+                        <div className="muted small">
+                          Due {new Date(task.dueDate).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <span className="badge badge-due_soon">Due soon</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </section>
 
             <section className="panel">

@@ -5,11 +5,12 @@ import { useWorkspace } from "../context/WorkspaceContext";
 
 const STATUSES = ["TODO", "IN_PROGRESS", "COMPLETED"];
 
-function TaskForm({ onCreate }) {
+function TaskForm({ onCreate, members = [] }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("TODO");
   const [dueDate, setDueDate] = useState("");
+  const [assigneeId, setAssigneeId] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -23,11 +24,13 @@ function TaskForm({ onCreate }) {
         description,
         status,
         dueDate: dueDate ? `${dueDate}:00` : null,
+        assigneeId: assigneeId ? Number(assigneeId) : null,
       });
       setTitle("");
       setDescription("");
       setStatus("TODO");
       setDueDate("");
+      setAssigneeId("");
     } catch (err) {
       setError(err.response?.data?.message || "Failed to create task.");
     } finally {
@@ -59,6 +62,17 @@ function TaskForm({ onCreate }) {
           </select>
         </label>
         <label>
+          Assignee
+          <select value={assigneeId} onChange={(event) => setAssigneeId(event.target.value)}>
+            <option value="">Unassigned</option>
+            {members.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.username}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
           Due Date
           <input
             type="datetime-local"
@@ -83,7 +97,7 @@ function TaskForm({ onCreate }) {
 }
 
 function Tasks() {
-  const { activeWorkspaceId, loading: workspaceLoading } = useWorkspace();
+  const { activeWorkspace, activeWorkspaceId, loading: workspaceLoading } = useWorkspace();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -114,6 +128,13 @@ function Tasks() {
     setTasks((prev) => prev.map((task) => (task.id === taskId ? data : task)));
   };
 
+  const handleAssigneeChange = async (taskId, assigneeId) => {
+    const { data } = await api.patch(`/tasks/${taskId}/assignee`, {
+      assigneeId: assigneeId ? Number(assigneeId) : null,
+    });
+    setTasks((prev) => prev.map((task) => (task.id === taskId ? data : task)));
+  };
+
   const handleDelete = async (taskId) => {
     await api.delete(`/tasks/${taskId}`);
     setTasks((prev) => prev.filter((task) => task.id !== taskId));
@@ -136,7 +157,7 @@ function Tasks() {
           <>
             <section className="panel">
               <h2>New Task</h2>
-              <TaskForm onCreate={handleCreate} />
+              <TaskForm onCreate={handleCreate} members={activeWorkspace?.members || []} />
             </section>
 
             <section className="panel">
@@ -152,6 +173,9 @@ function Tasks() {
                         {task.description && (
                           <div className="muted small">{task.description}</div>
                         )}
+                        {task.assigneeUsername && (
+                          <div className="muted small">Assigned to {task.assigneeUsername}</div>
+                        )}
                         {task.dueDate && (
                           <div className="muted small">
                             Due {new Date(task.dueDate).toLocaleString()}
@@ -159,6 +183,18 @@ function Tasks() {
                         )}
                       </div>
                       <div className="task-actions">
+                        <select
+                          value={task.assigneeId || ""}
+                          onChange={(event) => handleAssigneeChange(task.id, event.target.value)}
+                          className="badge-select"
+                        >
+                          <option value="">Unassigned</option>
+                          {(activeWorkspace?.members || []).map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.username}
+                            </option>
+                          ))}
+                        </select>
                         <select
                           value={task.status}
                           onChange={(event) => handleStatusChange(task.id, event.target.value)}

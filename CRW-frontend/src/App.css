@@ -315,6 +315,16 @@
   color: var(--success);
 }
 
+.badge-overdue {
+  background: rgba(220, 38, 38, 0.15);
+  color: #dc2626;
+}
+
+.badge-due_soon {
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
 /* Literature */
 .lit-grid {
   display: grid;

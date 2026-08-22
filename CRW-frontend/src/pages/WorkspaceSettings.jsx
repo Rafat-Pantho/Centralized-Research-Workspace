@@ -26,6 +26,16 @@ function WorkspaceSettings() {
     }
   };
 
+  const handleRemoveMember = async (memberId) => {
+    setError("");
+    try {
+      await api.delete(`/workspaces/${activeWorkspaceId}/members/${memberId}`);
+      await refreshWorkspaces();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to remove member.");
+    }
+  };
+
   if (loading) {
     return <div className="page-loading">Loading workspace settings...</div>;
   }
@@ -45,9 +55,18 @@ function WorkspaceSettings() {
             <section className="panel">
               <h2>Members</h2>
               <ul className="list">
-                {activeWorkspace.memberUsernames.map((username) => (
-                  <li key={username} className="list-row">
-                    <span className="list-title">{username}</span>
+                {activeWorkspace.members?.map((member) => (
+                  <li key={member.id} className="list-row">
+                    <span className="list-title">{member.username}</span>
+                    {admin && (
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-danger small"
+                        onClick={() => handleRemoveMember(member.id)}
+                      >
+                        Remove
+                      </button>
+                    )}
                   </li>
                 ))}
               </ul>
